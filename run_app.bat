@@ -1,7 +1,7 @@
 REM Language: Batch
 REM Key Libraries: None
 REM Purpose: Execute the local python environment and launch the web server silently.
-REM Book: Build a Smart Document Operations Center with Python
+REM Book: Build a Secure PDF Toolkit Using Python and Streamlit
 
 @echo off
 cd /d "%~dp0"

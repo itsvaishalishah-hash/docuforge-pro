@@ -2,7 +2,7 @@
 Language: Python 3.14.5
 Key Libraries: streamlit, pypdf, reportlab, Pillow, pdf2image, pytesseract
 Purpose: Execute optical character recognition alongside structural document manipulation.
-Book: Build a Smart Document Operations Center with Python
+Book: Build a Secure PDF Toolkit Using Python and Streamlit
 """
 
 import streamlit as st
@@ -257,7 +257,7 @@ if st.button("Execute Operation", disabled=is_disabled):
 st.markdown(
     """
     <div style='text-align: center; margin-top: 50px; color: #888888; font-size: 14px;'>
-        Build a Smart Document Operations Center with Python<br>
+        Build a Secure PDF Toolkit Using Python and Streamlit<br>
         &copy; 2026 Sharanam and Vaishali Shah
     </div>
     """,
