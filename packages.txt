@@ -1,7 +1,2 @@
-# Language: Plain Text
-# Key Libraries: None
-# Purpose: Instruct the Debian cloud server to install system-level binaries.
-# Book: Build a Smart Document Operations Center with Python
-
 tesseract-ocr
 libtesseract-dev
