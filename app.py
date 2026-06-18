@@ -1,10 +1,3 @@
-"""
-Language: Python 3.14.5
-Key Libraries: streamlit, pypdf, reportlab, Pillow, pdf2image, pytesseract
-Purpose: Execute optical character recognition alongside structural document manipulation.
-Book: Build a Secure PDF Toolkit Using Python and Streamlit
-"""
-
 import streamlit as st
 from pypdf import PdfReader, PdfWriter
 import io
@@ -93,173 +86,195 @@ with st.sidebar:
             "No additional configuration required. Files will merge in top-to-bottom order."
         )
 
-st.title("Batch Execution Zone")
-st.caption("All operations execute securely in local volatile memory.")
+main_col, promo_col = st.columns([3, 1], gap="large")
 
-uploaded_files = st.file_uploader(
-    "Drag and drop documents or images here",
-    accept_multiple_files=True,
-    type=["pdf", "png", "jpg", "jpeg"],
-)
+with main_col:
+    st.title("Batch Execution Zone")
+    st.caption("All operations execute securely in local volatile memory.")
 
-if uploaded_files:
-    st.write(f"Files in queue: {len(uploaded_files)}")
-    for file in uploaded_files:
-        st.text(f"- {file.name} ({round(file.size / 1024, 1)} KB)")
+    uploaded_files = st.file_uploader(
+        "Drag and drop documents or images here",
+        accept_multiple_files=True,
+        type=["pdf", "png", "jpg", "jpeg"],
+    )
 
-st.divider()
-is_disabled = len(uploaded_files) == 0
+    if uploaded_files:
+        st.write(f"Files in queue: {len(uploaded_files)}")
+        for file in uploaded_files:
+            st.text(f"- {file.name} ({round(file.size / 1024, 1)} KB)")
 
-if st.button("Execute Operation", disabled=is_disabled):
-    with st.spinner("Executing secure local operation..."):
-        try:
-            if operation == "Merge":
-                writer = PdfWriter()
-                for file in uploaded_files:
-                    reader = PdfReader(file)
-                    for page in reader.pages:
-                        writer.add_page(page)
+    st.divider()
+    is_disabled = len(uploaded_files) == 0
 
-                output_buffer = io.BytesIO()
-                writer.write(output_buffer)
-                output_buffer.seek(0)
-
-                st.success("Merge complete! Artifact ready for secure download.")
-                st.download_button(
-                    label="Download Merged Document",
-                    data=output_buffer,
-                    file_name="merged_output.pdf",
-                    mime="application/pdf",
-                )
-
-            elif operation == "Split":
-                target_file = uploaded_files[0]
-                reader = PdfReader(target_file)
-                total_pages = len(reader.pages)
-                pages_to_extract = parse_page_ranges(page_ranges, total_pages)
-
-                if not pages_to_extract:
-                    st.error("Please enter a valid page range.")
-                else:
+    if st.button("Execute Operation", disabled=is_disabled):
+        with st.spinner("Executing secure local operation..."):
+            try:
+                if operation == "Merge":
                     writer = PdfWriter()
-                    for idx in pages_to_extract:
-                        writer.add_page(reader.pages[idx])
+                    for file in uploaded_files:
+                        reader = PdfReader(file)
+                        for page in reader.pages:
+                            writer.add_page(page)
 
                     output_buffer = io.BytesIO()
                     writer.write(output_buffer)
                     output_buffer.seek(0)
 
-                    st.success("Split complete! Artifact ready for secure download.")
+                    st.success("Merge complete! Artifact ready for secure download.")
                     st.download_button(
-                        label="Download Split Document",
+                        label="Download Merged Document",
                         data=output_buffer,
-                        file_name="split_output.pdf",
+                        file_name="merged_output.pdf",
                         mime="application/pdf",
                     )
 
-            elif operation == "Watermark":
-                target_file = uploaded_files[0]
-                reader = PdfReader(target_file)
-                writer = PdfWriter()
+                elif operation == "Split":
+                    target_file = uploaded_files[0]
+                    reader = PdfReader(target_file)
+                    total_pages = len(reader.pages)
+                    pages_to_extract = parse_page_ranges(page_ranges, total_pages)
 
-                stamp_buffer = create_watermark(watermark_text, opacity_level)
-                stamp_reader = PdfReader(stamp_buffer)
-                stamp_page = stamp_reader.pages[0]
+                    if not pages_to_extract:
+                        st.error("Please enter a valid page range.")
+                    else:
+                        writer = PdfWriter()
+                        for idx in pages_to_extract:
+                            writer.add_page(reader.pages[idx])
 
-                for page in reader.pages:
-                    page.merge_page(stamp_page)
-                    writer.add_page(page)
+                        output_buffer = io.BytesIO()
+                        writer.write(output_buffer)
+                        output_buffer.seek(0)
 
-                output_buffer = io.BytesIO()
-                writer.write(output_buffer)
-                output_buffer.seek(0)
+                        st.success(
+                            "Split complete! Artifact ready for secure download."
+                        )
+                        st.download_button(
+                            label="Download Split Document",
+                            data=output_buffer,
+                            file_name="split_output.pdf",
+                            mime="application/pdf",
+                        )
 
-                st.success("Watermark applied! Artifact ready for secure download.")
-                st.download_button(
-                    label="Download Watermarked Document",
-                    data=output_buffer,
-                    file_name="watermarked_output.pdf",
-                    mime="application/pdf",
-                )
+                elif operation == "Watermark":
+                    target_file = uploaded_files[0]
+                    reader = PdfReader(target_file)
+                    writer = PdfWriter()
 
-            elif operation == "Secure & Optimize":
-                target_file = uploaded_files[0]
-                reader = PdfReader(target_file)
-                writer = PdfWriter()
+                    stamp_buffer = create_watermark(watermark_text, opacity_level)
+                    stamp_reader = PdfReader(stamp_buffer)
+                    stamp_page = stamp_reader.pages[0]
 
-                for page in reader.pages:
-                    writable_page = writer.add_page(page)
-                    writable_page.compress_content_streams()
+                    for page in reader.pages:
+                        page.merge_page(stamp_page)
+                        writer.add_page(page)
 
-                writer.add_metadata(
-                    {"/Producer": "DocuForge Pro", "/Creator": "DocuForge Pro"}
-                )
+                    output_buffer = io.BytesIO()
+                    writer.write(output_buffer)
+                    output_buffer.seek(0)
 
-                if encryption_password:
-                    writer.encrypt(encryption_password, algorithm="AES-256")
-                else:
-                    st.warning(
-                        "No password provided. The file will be optimized but left unlocked."
-                    )
-
-                output_buffer = io.BytesIO()
-                writer.write(output_buffer)
-                output_buffer.seek(0)
-
-                st.success(
-                    "File secured, scrubbed, and compressed! Ready for download."
-                )
-                st.download_button(
-                    label="Download Secured Document",
-                    data=output_buffer,
-                    file_name="secured_output.pdf",
-                    mime="application/pdf",
-                )
-
-            elif operation == "OCR Scanner":
-                target_file = uploaded_files[0]
-                file_extension = target_file.name.split(".")[-1].lower()
-                extracted_text = ""
-
-                if file_extension in ["png", "jpg", "jpeg"]:
-                    img = Image.open(target_file)
-                    extracted_text = pytesseract.image_to_string(img)
-                else:
-                    raw_bytes = target_file.read()
-                    images = pdf2image.convert_from_bytes(raw_bytes, dpi=300)
-                    for img in images:
-                        page_text = pytesseract.image_to_string(img)
-                        extracted_text += page_text + "\n\n--- Page Break ---\n\n"
-
-                if extracted_text.strip():
-                    st.success("Text successfully extracted from image arrays.")
-                    st.text_area(
-                        "Extracted Text Payload", value=extracted_text, height=400
-                    )
-
+                    st.success("Watermark applied! Artifact ready for secure download.")
                     st.download_button(
-                        label="Download Raw Text File",
-                        data=extracted_text,
-                        file_name="extracted_data.txt",
-                        mime="text/plain",
-                    )
-                else:
-                    st.warning(
-                        "The vision engine could not detect any readable text in this file."
+                        label="Download Watermarked Document",
+                        data=output_buffer,
+                        file_name="watermarked_output.pdf",
+                        mime="application/pdf",
                     )
 
-        except Exception as e:
-            st.error(
-                f"Execution failed. Ensure your file is not corrupted. System message: {e}"
-            )
+                elif operation == "Secure & Optimize":
+                    target_file = uploaded_files[0]
+                    reader = PdfReader(target_file)
+                    writer = PdfWriter()
+
+                    for page in reader.pages:
+                        writable_page = writer.add_page(page)
+                        writable_page.compress_content_streams()
+
+                    writer.add_metadata(
+                        {"/Producer": "DocuForge Pro", "/Creator": "DocuForge Pro"}
+                    )
+
+                    if encryption_password:
+                        writer.encrypt(encryption_password, algorithm="AES-256")
+                    else:
+                        st.warning(
+                            "No password provided. The file will be optimized but left unlocked."
+                        )
+
+                    output_buffer = io.BytesIO()
+                    writer.write(output_buffer)
+                    output_buffer.seek(0)
+
+                    st.success(
+                        "File secured, scrubbed, and compressed! Ready for download."
+                    )
+                    st.download_button(
+                        label="Download Secured Document",
+                        data=output_buffer,
+                        file_name="secured_output.pdf",
+                        mime="application/pdf",
+                    )
+
+                elif operation == "OCR Scanner":
+                    target_file = uploaded_files[0]
+                    file_extension = target_file.name.split(".")[-1].lower()
+                    extracted_text = ""
+
+                    if file_extension in ["png", "jpg", "jpeg"]:
+                        img = Image.open(target_file)
+                        extracted_text = pytesseract.image_to_string(img)
+                    else:
+                        raw_bytes = target_file.read()
+                        images = pdf2image.convert_from_bytes(raw_bytes, dpi=300)
+                        for img in images:
+                            page_text = pytesseract.image_to_string(img)
+                            extracted_text += page_text + "\n\n--- Page Break ---\n\n"
+
+                    if extracted_text.strip():
+                        st.success("Text successfully extracted from image arrays.")
+                        st.text_area(
+                            "Extracted Text Payload", value=extracted_text, height=400
+                        )
+
+                        st.download_button(
+                            label="Download Raw Text File",
+                            data=extracted_text,
+                            file_name="extracted_data.txt",
+                            mime="text/plain",
+                        )
+                    else:
+                        st.warning(
+                            "The vision engine could not detect any readable text in this file."
+                        )
+
+            except Exception as e:
+                st.error(
+                    f"Execution failed. Ensure your file is not corrupted. System message: {e}"
+                )
+
+with promo_col:
+    st.markdown(
+        """<div style="background-color: #f8f9fa; padding: 24px; border-radius: 12px; border: 1px solid #e9ecef; text-align: center; margin-top: 15px;">
+<p style="text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; color: #6c757d; margin-bottom: 10px; font-weight: bold;">Companion Book</p>
+<img src="https://sharanamshah.com/mymusings/wp-content/uploads/2026/06/CP1.png" alt="Build a Secure PDF Toolkit Cover" style="width: 100%; max-width: 180px; height: auto; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 15px;">
+<h3 style="margin-top: 0; color: #2b3035; font-size: 20px; line-height: 1.3;">Build a Secure PDF Toolkit</h3>
+<p style="font-size: 15px; color: #495057; font-weight: 500;">Using Python and Streamlit</p>
+<div style="background-color: #ffffff; border: 1px dashed #ced4da; padding: 15px; margin: 20px 0; border-radius: 8px;">
+<p style="font-style: italic; color: #6c757d; font-size: 13px; margin: 0;">Book Two in The Weekend Developer Series</p>
+</div>
+<p style="font-size: 13px; color: #495057; margin-bottom: 24px; line-height: 1.5;">A comprehensive, weekend-sized architecture guide covering memory-safe pipelines, Cartesian coordinate geometry for watermarking, and zero-cloud deployment strategies.</p>
+<a href="https://amzn.in/d/04XF7IXk" target="_blank" style="display: block; background-color: #FF9900; color: #ffffff; padding: 12px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-bottom: 12px; font-size: 14px; transition: background-color 0.2s;">🛒 Buy on Amazon</a>
+<a href="https://www.amazon.in/dp/B0H56RF778?binding=kindle_edition&ref=dbs_dp_rwt_sb_pc_tkin" target="_blank" style="display: block; background-color: #1B3358; color: #ffffff; padding: 12px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-bottom: 12px; font-size: 14px; transition: background-color 0.2s;">📚 Browse The Full Series</a>
+<a href="https://sharanamshah.com/mymusings/the-weekend-developer-series-on-kindle/" target="_blank" style="display: block; background-color: #e9ecef; color: #495057; padding: 12px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-bottom: 12px; font-size: 14px; border: 1px solid #ced4da;">🌐 Explore Author Portfolio</a>
+<a href="https://www.amazon.in/review/create-review/?ie=UTF8&channel=glance-detail&asin=B0H5W2PYS1" target="_blank" style="display: block; background-color: #198754; color: #ffffff; padding: 12px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">⭐ Leave a Review</a>
+</div>""",
+        unsafe_allow_html=True,
+    )
 
 # Inject the custom application footer
 st.markdown(
-    """
-    <div style='text-align: center; margin-top: 50px; color: #888888; font-size: 14px;'>
-        Build a Secure PDF Toolkit Using Python and Streamlit<br>
-        &copy; 2026 Sharanam and Vaishali Shah
-    </div>
-    """,
+    """<div style='text-align: center; margin-top: 50px; color: #888888; font-size: 14px;'>
+Build a Secure PDF Toolkit Using Python and Streamlit<br>
+&copy; 2026 Sharanam and Vaishali Shah
+</div>""",
     unsafe_allow_html=True,
 )
